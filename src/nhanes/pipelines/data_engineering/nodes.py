@@ -5,7 +5,9 @@ generated using Kedro 0.19.8
 
 import pandas as pd
 
-def carga_demografica() -> pd.DataFrame:
-    nhanes_datos = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DEMO.XPT")
+def carga_datasets() -> pd.DataFrame:
+    demografia = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DEMO.XPT")
+    colesterol = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_TCHOL.XPT")
+    insulina = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_INS.XPT")
 
-    return nhanes_datos
+    return demografia, colesterol, insulina
