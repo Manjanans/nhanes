@@ -8,6 +8,7 @@ from kedro.pipeline import Pipeline, pipeline
 
 from kedro.pipeline import Pipeline, node
 from nhanes.nodes.demographic import download_file
+from .nodes import carga_demografica
 
 def create_pipeline() -> Pipeline:
     return Pipeline(
@@ -20,6 +21,12 @@ def create_pipeline() -> Pipeline:
                 ),
                 outputs=None,
                 name="download_nhanes_data",
+            ),
+            node(
+                func=carga_demografica,
+                inputs=None,
+                outputs="nhanes_datos",
+                name="datelis",
             ),
         ]
     )
