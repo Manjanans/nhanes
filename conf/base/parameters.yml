@@ -1,0 +1,2 @@
+nhanes_url: "https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DEMO.XPT"
+nhanes_output_path: "data/01_raw/P_DEMO.XPT"
