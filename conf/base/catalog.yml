@@ -51,3 +51,11 @@ colesterol:
 insulina:
   type: pandas.ParquetDataset
   filepath: data/01_raw/insulina.pq
+
+depresion:
+  type: pandas.ParquetDataset
+  filepath: data/01_raw/depresion.pq
+
+proteinaC:
+  type: pandas.ParquetDataset
+  filepath: data/01_raw/proteinaC.pq

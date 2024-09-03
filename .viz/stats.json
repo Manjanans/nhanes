@@ -1,1 +1,1 @@
-{"demografia": {"rows": 15560, "columns": 29, "file_size": 489779}, "colesterol": {"rows": 12198, "columns": 3, "file_size": 103701}, "insulina": {"rows": 5090, "columns": 5, "file_size": 113612}}
+{"demografia": {"rows": 15560, "columns": 29, "file_size": 489779}, "colesterol": {"rows": 12198, "columns": 3, "file_size": 103701}, "insulina": {"rows": 5090, "columns": 5, "file_size": 113612}, "depresion": {"rows": 8965, "columns": 11, "file_size": 95842}, "proteinaC": {"rows": 13772, "columns": 3, "file_size": 109690}}
