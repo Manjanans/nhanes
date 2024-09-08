@@ -59,3 +59,7 @@ depresion:
 proteinaC:
   type: pandas.ParquetDataset
   filepath: data/01_raw/proteinaC.pq
+
+perfilBioquimico:
+  type: pandas.ParquetDataset
+  filepath: data/01_raw/perfilBioquimico.pq
