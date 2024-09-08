@@ -63,3 +63,12 @@ proteinaC:
 perfilBioquimico:
   type: pandas.ParquetDataset
   filepath: data/01_raw/perfilBioquimico.pq
+
+medidasCorporales:
+  type: pandas.ParquetDataset
+  filepath: data/01_raw/medidasCorporales.pq
+
+presionArterial:
+  type: pandas.ParquetDataset
+  filepath: data/01_raw/presionArterial.pq
+
