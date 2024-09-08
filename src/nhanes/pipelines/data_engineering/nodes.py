@@ -12,5 +12,7 @@ def carga_datasets() -> pd.DataFrame:
     depresion = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DPQ.XPT")
     proteinaC = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_HSCRP.XPT")
     perfilBioquimico = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_BIOPRO.XPT")
+    presionArterial = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_BPXO.XPT")
+    medidasCorporales = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_BMX.XPT")
 
-    return demografia, colesterol, insulina, depresion, proteinaC, perfilBioquimico
+    return demografia, colesterol, insulina, depresion, proteinaC, perfilBioquimico, presionArterial, medidasCorporales

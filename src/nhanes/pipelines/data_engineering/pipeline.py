@@ -11,7 +11,7 @@ def create_pipeline() -> Pipeline:
             node(
                 func=carga_datasets,
                 inputs=None,
-                outputs=["demografia", "colesterol", "insulina", "depresion", "proteinaC", "perfilBioquimico"],
+                outputs=["demografia", "colesterol", "insulina", "depresion", "proteinaC", "perfilBioquimico", "presionArterial", "medidasCorporales"],
                 name="datelis",
             ),
         ]
