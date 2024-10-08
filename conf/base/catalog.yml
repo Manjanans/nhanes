@@ -72,3 +72,7 @@ presionArterial:
   type: pandas.ParquetDataset
   filepath: data/01_raw/presionArterial.pq
 
+demografia_clean:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/demografia_clean.pq
+
