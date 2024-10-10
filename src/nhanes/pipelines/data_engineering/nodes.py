@@ -3,6 +3,10 @@ This is a boilerplate pipeline 'data_engineering'
 generated using Kedro 0.19.8
 """
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import PowerTransformer
+from sklearn.impute import KNNImputer
 #Funciones de carga de datos
 def carga_datasets() -> pd.DataFrame:
     demografia = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DEMO.XPT")
@@ -165,3 +169,34 @@ def carga_datasets() -> pd.DataFrame:
     })
 
     return demografia, colesterol, insulina, depresion, proteinaC, perfilBioquimico, presionArterial, medidasCorporales
+
+def demografia_edad(demografia_imp:pd.DataFrame)->pd.DataFrame:
+    datos = demografia_imp[['Edad en años al momento del examen']]
+    datos.loc[datos['Edad en años al momento del examen']<=5] = 0
+    datos.loc[(datos['Edad en años al momento del examen']>0) & (datos['Edad en años al momento del examen']<=15)] = 1
+    datos.loc[(datos['Edad en años al momento del examen']>1) & (datos['Edad en años al momento del examen']<=45)] = 2
+    datos.loc[(datos['Edad en años al momento del examen']>2) & (datos['Edad en años al momento del examen']<=65)] = 3
+    datos.loc[datos['Edad en años al momento del examen']>3] = 4
+    return datos
+
+def demografia_pobreza(demografia_imp:pd.DataFrame)->pd.DataFrame:
+    datos = demografia_imp[['Relación de ingresos familiares con la pobreza']]
+    datos.loc[datos['Relación de ingresos familiares con la pobreza']<=0.8] = 0
+    datos.loc[(datos['Relación de ingresos familiares con la pobreza']>0) & (datos['Relación de ingresos familiares con la pobreza']<=1.5)] = 1
+    datos.loc[(datos['Relación de ingresos familiares con la pobreza']>1) & (datos['Relación de ingresos familiares con la pobreza']<=3)] = 2
+    datos.loc[(datos['Relación de ingresos familiares con la pobreza']>2) & (datos['Relación de ingresos familiares con la pobreza']<=4.9)] = 3
+    datos.loc[(datos['Relación de ingresos familiares con la pobreza']>3) & (datos['Relación de ingresos familiares con la pobreza']<80)] = 4
+    return datos
+
+def demografia_completa(demografia:pd.DataFrame)->pd.DataFrame:
+    knn_imputer = KNNImputer(n_neighbors=10, weights='uniform')
+    demografia_imp = pd.DataFrame(knn_imputer.fit_transform(demografia), columns=demografia.columns)
+    pobreza = demografia_pobreza(demografia_imp)
+    edad = demografia_edad(demografia_imp)
+    demografia_clean = pd.DataFrame()
+    demografia_clean['ID'] = demografia[['ID']]
+    demografia_clean['Nivel Pobreza'] = pobreza
+    demografia_clean['Edad'] = edad
+    demografia_clean['Sexo'] = demografia[['Género']]
+    return demografia_clean
+
