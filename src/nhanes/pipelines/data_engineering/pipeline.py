@@ -12,13 +12,13 @@ def create_pipeline() -> Pipeline:
                 func=carga_datasets,
                 inputs=None,
                 outputs=["demografia", "colesterol", "insulina", "depresion", "proteinaC", "perfilBioquimico", "presionArterial", "medidasCorporales"],
-                name="datelis",
+                name="DataGathering",
             ),
             node(
                 func=demografia_completa,
                 inputs="demografia",
                 outputs="demografia_clean",
-                name="MyNode"
+                name="DemografiaClean"
             ),
             node(
                 func=intermediate_data,

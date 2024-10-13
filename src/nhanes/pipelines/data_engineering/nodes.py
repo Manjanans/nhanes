@@ -233,6 +233,19 @@ def multicolumn_IQR(dataframe:pd.DataFrame) -> pd.DataFrame:
     return dato
 
 def multicolumn_scale(dataframe:pd.DataFrame) -> pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Copies the ID, age, sex and Income columns
+    2. Applies StandardScaler to each column
+    3. Merge scaled columns back into a DataFrame, using an 'ID' column
+
+    Args:
+        dataframe (pd.DataFrame): DataFrame to perform scaling
+
+    Returns:
+        pd.DataFrame: DataFrame with scaled columns
+    """
     scaler = StandardScaler()
     dato = dataframe[['ID','Edad','Sexo','Nivel Pobreza']].copy()
     for columna in dataframe.columns[4:]:
@@ -243,6 +256,19 @@ def multicolumn_scale(dataframe:pd.DataFrame) -> pd.DataFrame:
     return dato
 
 def multicolumn_minmax(dataframe:pd.DataFrame) -> pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Copies the ID, age, sex and Income columns
+    2. Applies MinMaxScaler to each column
+    3. Merge scaled columns back into a DataFrame, using an 'ID' column
+
+    Args:
+        dataframe (pd.DataFrame): DataFrame to perform scaling
+
+    Returns:
+        pd.DataFrame: DataFrame with scaled columns
+    """
     minmax = MinMaxScaler()
     dato = dataframe[['ID','Edad','Sexo','Nivel Pobreza']].copy()
     for columna in dataframe.columns[4:]:
@@ -253,6 +279,20 @@ def multicolumn_minmax(dataframe:pd.DataFrame) -> pd.DataFrame:
     return dato
 
 def multicolumn_PowerTransformer(dataframe:pd.DataFrame) -> pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Copies the ID, age, sex and Income columns
+    2. Applies PowerTransformer to each column
+    3. Merge scaled columns back into a DataFrame, using an 'ID' column
+
+    Args:
+        dataframe (pd.DataFrame): DataFrame to perform scaling
+
+    Returns:
+        pd.DataFrame: DataFrame with scaled columns
+    """
+
     pt = PowerTransformer(method='yeo-johnson')
     dato = dataframe[['ID','Edad','Sexo','Nivel Pobreza']].copy()
     for columna in dataframe.columns[4:]:
