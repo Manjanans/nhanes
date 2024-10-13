@@ -142,7 +142,7 @@ def carga_datasets() -> pd.DataFrame:
         "LBDSUASI": "Ácido Úrico (umol/L)"
     })
 
-    presionArterial = presionArterial.rename(columns={
+    presion = presionArterial.rename(columns={
         'SEQN': 'ID',
         'BPAOARM': 'Brazo seleccionado - oscilométrico',
         'BPAOCSZ': 'Tamaño del manguito codificado - oscilométrico',
@@ -156,6 +156,9 @@ def carga_datasets() -> pd.DataFrame:
         'BPXOPLS2': 'Pulso - 2da lectura oscilométrica',
         'BPXOPLS3': 'Pulso - 3ra lectura oscilométrica'
     })
+
+    presionArterial = presion.drop(labels='Brazo seleccionado - oscilométrico', axis=1)
+
 
     medidasCorporales = medidasCorporales.rename(columns={
         'SEQN': 'ID',
@@ -388,7 +391,7 @@ def demografia_insulina(demografia_limpia:pd.DataFrame, insulina:pd.DataFrame)->
     IQR = Q3 - Q1
     lower_bound = Q1 - 1.5 * IQR
     upper_bound = Q3 + 1.5 * IQR
-    insulina_clean = insulina_imputada[~((insulina_imputada["Nivel Insulina"] < lower_bound) | (insulina_imputada["Nivel Insulina"] > upper_bound))]
+    insulina_clean = pd.DataFrame((insulina_imputada[~((insulina_imputada["Nivel Insulina"] < lower_bound) | (insulina_imputada["Nivel Insulina"] > upper_bound))]),columns=insulina_imputada.columns)
     #Transformation of insulina_clean data
     insulina_clean["Nivel Insulina"] = scaler.fit_transform(insulina_clean[["Nivel Insulina"]])
     insulina_clean["Nivel Insulina"] = pt.fit_transform(insulina_clean[["Nivel Insulina"]])
@@ -487,7 +490,38 @@ def demografia_perfil_bioquimico(demografia_limpia:pd.DataFrame, perfilB:pd.Data
     return perfil_clean
 
 def demografia_medidas_corporales(demografia_limpia:pd.DataFrame, medidas_corporales:pd.DataFrame) -> pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Merges demography and body measurements dataframes.
+    2. Creates a new dataframe, with the following columns:
+        'ID': ID number;
+        'Edad': Age;
+        'Sexo': Gender: 0 for women, 1 for men;
+        'Nivel Pobreza': Income in 5 groups, specified in demografia_pobreza;
+        'Peso (kg)': Weight in kg;
+        'Altura (cm)': Height in cm;
+        'IMC (kg/m²)': Index of Body Mass; 
+        'Longitud muslo (cm)': Thigh length in cm;
+        'Longitud brazo superior (cm)': Upper arm length in cm; 
+        'Circunferencia brazo (cm)': Arm circumference in cm;
+        'Circunferencia cintura (cm)': Waist circumference in cm;
+        'Circunferencia cadera (cm)': Hip circumference in cm;
+    3. Cleans the merged dataframe.
+    4. Returns a clean dataframe.
+
+    Args:
+        demografia_limpia (pd.DataFrame): Demographic data
+        medidas_corporales (pd.DataFrame): Body measurements data
+
+    Returns:
+        pd.DataFrame: Dataframe Power Transformed
+    """
+
+    #Merge
     body_measures = pd.merge(demografia_limpia, medidas_corporales, on='ID', how='inner')
+
+    #Creation of dataframe
     corporal = pd.DataFrame()
     corporal['ID'] = body_measures['ID']
     corporal['Edad'] = body_measures['Edad']
@@ -501,5 +535,85 @@ def demografia_medidas_corporales(demografia_limpia:pd.DataFrame, medidas_corpor
     corporal['Circunferencia brazo (cm)'] = body_measures['Circunferencia del brazo (cm)']
     corporal['Circunferencia cintura (cm)'] = body_measures['Circunferencia de la cintura (cm)']
     corporal['Circunferencia cadera (cm)'] = body_measures['Circunferencia de la cadera (cm)']
+
+    #Imputation
     medidas = imputacion(corporal)
-    medidas_IQR = multicolumn_IQR(medidas)
+
+    #Power Transformed
+    medidas_corporales_clean = multicolumn_PowerTransformer(medidas)
+    return medidas_corporales_clean
+
+def demografia_presion_arterial(demografia_limpia:pd.DataFrame, presion_arterial:pd.DataFrame) -> pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Merges demography and blood pressure dataframes.
+    2. Creates a new dataframe, with the following columns:
+        'ID': ID number;
+        'Edad': Age;
+        'Sexo': Gender: 0 for women, 1 for men;
+        'Nivel Pobreza': Income in 5 groups, specified in demografia_pobreza;
+        'Tamaño del manguito codificado - oscilométrico': Coded cuff size - oscillometric;
+        'Presión sistólica - 1ra lectura oscilométrica': Systolic blood pressure - 1st reading;
+        'Presion diastólica - 1ra lectura oscilométrica': Diastolic blood pressure - 1st reading;
+        'Presión sistólica - 2da lectura oscilométrica': Systolic blood pressure - 2nd reading;
+        'Presion diastólica - 2da lectura oscilométrica': Diastolic blood pressure - 2nd reading;
+        'Presión sistólica - 3ra lectura oscilométrica': Systolic blood pressure - 3rd reading;
+        'Presion diastólica - 3ra lectura oscilométrica': Diastolic blood pressure - 3rd reading;
+        'Pulso - 1ra lectura oscilométrica': Pulse - 1st reading;
+        'Pulso - 2da lectura oscilométrica': Pulse - 2nd reading;
+        'Pulso - 3ra lectura oscilométrica': Pulse - 3rd reading;
+    3. Imputates the merged dataframe.
+    4. Makes an IQR filter on the merged dataframe.
+    5. Drops rows with missing values.
+    6. Applies the PowerTransformer on the merged dataframe.
+    7. Returns a clean dataframe.
+
+    Args:
+        demografia_limpia (pd.DataFrame): Demographic data
+        presion_arterial (pd.DataFrame): Blood pressure data
+
+    Returns:
+        pd.DataFrame: Dataframe Power Transformed
+    
+    """
+    #Merge
+    presion = pd.merge(demografia_limpia, presion_arterial, on='ID', how='inner')
+
+    #Imputation
+    presion_imp = imputacion(presion)
+
+    #IQR Filter
+    presion_IQR = multicolumn_IQR(presion_imp)
+
+    #Drop rows with missing values
+    presion_dropna = presion_IQR.dropna()
+
+    #Power Transformed
+    presion_clean = multicolumn_PowerTransformer(presion_dropna)
+    return presion_clean
+
+def intermediate_data(demografia_limpia:pd.DataFrame, insulina:pd.DataFrame, perfilB:pd.DataFrame, medida_corporales:pd.DataFrame, presion_arterial:pd.DataFrame) -> pd.DataFrame:
+    """
+    This function does the following:
+        1. Takes demography, insulina, perfilB, medida_corporales and presion_arterial dataframes.
+        2. Merges them, using each function previously made.
+        3. Returns each dataframe cleaned and ready to be worked with.
+
+    Args:
+        demografia_limpia (pd.DataFrame): Demographic data
+        insulina (pd.DataFrame): Insulin data
+        perfilB (pd.DataFrame): Blood profile data
+        medida_corporales (pd.DataFrame): Body measurements data
+        presion_arterial (pd.DataFrame): Blood pressure data
+
+    Returns:
+        pd.DataFrame: Clean dataframes
+
+    """
+    insulina_clean = demografia_insulina(demografia_limpia, insulina)
+    perfilB_clean = demografia_perfil_bioquimico(demografia_limpia, perfilB)
+    medidas_corporales_clean = demografia_medidas_corporales(demografia_limpia, medida_corporales)
+    presion_clean = demografia_presion_arterial(demografia_limpia, presion_arterial)
+
+    return insulina_clean, perfilB_clean, medidas_corporales_clean, presion_clean

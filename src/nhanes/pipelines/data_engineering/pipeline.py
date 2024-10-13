@@ -20,5 +20,11 @@ def create_pipeline() -> Pipeline:
                 outputs="demografia_clean",
                 name="MyNode"
             ),
+            node(
+                func=intermediate_data,
+                inputs=["demografia_clean", "insulina", "perfilBioquimico", "medidasCorporales", "presionArterial"],
+                outputs=["insulina_clean", "perfilBioquimico_clean", "medidasCorporales_clean", "presion_clean"],
+                name="DataProcessing"
+            ),
         ]
     )

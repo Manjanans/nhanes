@@ -75,3 +75,19 @@ presionArterial:
 demografia_clean:
   type: pandas.ParquetDataset
   filepath: data/02_intermediate/demografia_clean.pq
+
+insulina_clean:
+  type: pandas.ParquetDataset
+  filepath: "data/02_intermediate/insulina_clean.pq"
+
+perfilBioquimico_clean:
+  type: pandas.ParquetDataset
+  filepath: "data/02_intermediate/perfilBioquimico_clean.pq"
+
+medidasCorporales_clean:
+  type: pandas.ParquetDataset
+  filepath: "data/02_intermediate/medidasCorporales_clean.pq"
+  
+presion_clean:
+  type: pandas.ParquetDataset
+  filepath: "data/02_intermediate/presion_clean.pq"
