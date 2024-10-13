@@ -9,6 +9,20 @@ from sklearn.preprocessing import PowerTransformer
 from sklearn.impute import KNNImputer
 #Funciones de carga de datos
 def carga_datasets() -> pd.DataFrame:
+    """
+    This function takes no arguments.
+    First node in this pipeline.
+    This function returns multiple Pandas DataFrames. These dataframes will be taken as raw data for further processing.
+    Said dataframes are:
+    demografia: Demographic Variables and Sample Weights (P_DEMO),
+    colesterol: Cholesterol - Total (P_TCHOL),
+    insulina: Insulin (P_INS),
+    depresion: Mental Health - Depression Screener (P_DPQ),
+    proteinaC: High-Sensitivity C-Reactive Protein (P_HSCRP),
+    perfilBioquimico: Standard Biochemistry Profile (P_BIOPRO),
+    presionArterial: Blood Pressure - Oscillometric Measurement (P_BPXO),
+    medidasCorporales: Body Measures (P_BMX).
+    """
     demografia = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DEMO.XPT")
     colesterol = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_TCHOL.XPT")
     insulina = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_INS.XPT")
@@ -170,7 +184,100 @@ def carga_datasets() -> pd.DataFrame:
 
     return demografia, colesterol, insulina, depresion, proteinaC, perfilBioquimico, presionArterial, medidasCorporales
 
+def imputacion(dataframe:pd.DataFrame) -> pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Imputes missing values using KNN
+    2. Returns imputed dataframe
+
+    Args:
+        dataframe (pd.DataFrame): DataFrame to impute
+
+    Returns:
+        pd.DataFrame: Imputed dataframe
+    """
+    knn_imputer = KNNImputer(n_neighbors=10, weights='uniform')
+    imputado = pd.DataFrame(knn_imputer.fit_transform(dataframe), columns=dataframe.columns)
+    return imputado
+
+def multicolumn_IQR(dataframe:pd.DataFrame) -> pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Copies the ID, age, sex and Income columns
+    2. Calculates the IQR for each column
+    3. Filter out the outliers for the current column only
+    4. Merge filtered column back into a DataFrame, using an 'ID' column
+
+    Args:
+        dataframe (pd.DataFrame): DataFrame to perform IQR
+
+    Returns:
+        pd.DataFrame: DataFrame with outliers removed
+    """
+    dato = dataframe[['ID','Edad','Sexo','Nivel Pobreza']].copy()
+    for columna in dataframe.columns[4:]:
+        Q1 = dataframe[columna].quantile(0.25)
+        Q3 = dataframe[columna].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        # Filter out the outliers for the current column only
+        col_limpia = dataframe[~((dataframe[columna] < lower_bound) | (dataframe[columna] > upper_bound))][['ID', columna]]
+        # Merge filtered column back into the 'dato' DataFrame on the 'ID' column
+        dato = dato.merge(col_limpia, on='ID', how='left')
+    return dato
+
+def multicolumn_scale(dataframe:pd.DataFrame) -> pd.DataFrame:
+    scaler = StandardScaler()
+    dato = dataframe[['ID','Edad','Sexo','Nivel Pobreza']].copy()
+    for columna in dataframe.columns[4:]:
+        col_limpia = pd.DataFrame()
+        col_limpia['ID'] = dataframe[['ID']].copy()
+        col_limpia[columna] = scaler.fit_transform(dataframe[[columna]])
+        dato = dato.merge(col_limpia, on='ID', how='left')
+    return dato
+
+def multicolumn_minmax(dataframe:pd.DataFrame) -> pd.DataFrame:
+    minmax = MinMaxScaler()
+    dato = dataframe[['ID','Edad','Sexo','Nivel Pobreza']].copy()
+    for columna in dataframe.columns[4:]:
+        col_limpia = pd.DataFrame()
+        col_limpia['ID'] = dataframe[['ID']].copy()
+        col_limpia[columna] = minmax.fit_transform(dataframe[[columna]])
+        dato = dato.merge(col_limpia, on='ID', how='left')
+    return dato
+
+def multicolumn_PowerTransformer(dataframe:pd.DataFrame) -> pd.DataFrame:
+    pt = PowerTransformer(method='yeo-johnson')
+    dato = dataframe[['ID','Edad','Sexo','Nivel Pobreza']].copy()
+    for columna in dataframe.columns[4:]:
+        col_limpia = pd.DataFrame()
+        col_limpia['ID'] = dataframe[['ID']].copy()
+        col_limpia[columna] = pt.fit_transform(dataframe[[columna]])
+        dato = dato.merge(col_limpia, on='ID', how='left')
+    return dato
+
 def demografia_edad(demografia_imp:pd.DataFrame)->pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Categorizes the age in 5-year groups:
+        0: 0-5
+        1: 6-15
+        2: 16-45
+        3: 46-65
+        4: 65+
+
+    2. Returns the dataframe with the age in 5-year groups.
+
+    Args:
+        demografia_imp (pd.DataFrame): Demographic data
+
+    Returns:
+        pd.DataFrame: Demographic data with the age in 5-year groups
+    """
     datos = demografia_imp[['Edad en años al momento del examen']]
     datos.loc[datos['Edad en años al momento del examen']<=5] = 0
     datos.loc[(datos['Edad en años al momento del examen']>0) & (datos['Edad en años al momento del examen']<=15)] = 1
@@ -180,6 +287,24 @@ def demografia_edad(demografia_imp:pd.DataFrame)->pd.DataFrame:
     return datos
 
 def demografia_pobreza(demografia_imp:pd.DataFrame)->pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Categorizes the income in 5 groups:
+        0: <= 0.8
+        1: >0.8 and <= 1.5
+        2: >1.5 and <= 3
+        3: >3 and <= 4.9
+        4: >4.9
+
+    2. Returns the dataframe with the income in 5 groups.
+
+    Args:
+        demografia_imp (pd.DataFrame): Demographic data
+
+    Returns:
+        pd.DataFrame: Demographic data with the income in 5-year groups
+    """
     datos = demografia_imp[['Relación de ingresos familiares con la pobreza']]
     datos.loc[datos['Relación de ingresos familiares con la pobreza']<=0.8] = 0
     datos.loc[(datos['Relación de ingresos familiares con la pobreza']>0) & (datos['Relación de ingresos familiares con la pobreza']<=1.5)] = 1
@@ -189,6 +314,25 @@ def demografia_pobreza(demografia_imp:pd.DataFrame)->pd.DataFrame:
     return datos
 
 def demografia_completa(demografia:pd.DataFrame)->pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Imputes missing values using KNN
+    2. Categorizes the income using demografia_pobreza.
+    3. Categorizes the age using demografia_edad.
+    4. A new dataframe is created, using this columns:
+        'ID': ID number; 
+        'Nivel Pobreza': Income in 5 groups, specified in demografia_pobreza; 
+        'Edad': Age in 5 groups, specified in demografia_edad;
+        'Sexo': Gender: 0 for women, 1 for men
+    5. Returns dataframe created in 4.
+
+    Args:
+        demografia (pd.DataFrame): Demographic data
+
+    Returns:
+        pd.DataFrame: Demographic data with the income in 5-year groups and the age in 5-year groups
+    """
     knn_imputer = KNNImputer(n_neighbors=10, weights='uniform')
     demografia_imp = pd.DataFrame(knn_imputer.fit_transform(demografia), columns=demografia.columns)
     pobreza = demografia_pobreza(demografia_imp)
@@ -200,3 +344,162 @@ def demografia_completa(demografia:pd.DataFrame)->pd.DataFrame:
     demografia_clean['Sexo'] = demografia[['Género']]
     return demografia_clean
 
+def demografia_insulina(demografia_limpia:pd.DataFrame, insulina:pd.DataFrame)->pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Merges demographic data with insulina data
+    2. A new dataframe is created, using this columns:
+        'ID': ID number; 
+        'Nivel Pobreza': Income in 5 groups, specified in demografia_pobreza; 
+        'Edad': Age in 5 groups, specified in demografia_edad;
+        'Sexo': Gender: 0 for women, 1 for men
+        'Nivel Insulina': Insulina data
+    3. Imputes missing values using KNN
+    4. Deletion of outliers
+    5. Data transformation using standard scaler and power transformer
+    6. Returns clean dataframe.
+
+    Args:
+        demografia_limpia (pd.DataFrame): Demographic data
+        insulina (pd.DataFrame): Insulin data
+
+    Returns:
+        pd.DataFrame: Demographic data with the income in 5-year groups and the age in 5-year groups
+    """
+    #Creation of scaler and transformer
+    scaler = StandardScaler()
+    pt = PowerTransformer(method='yeo-johnson')
+    #Merging of demographic and insulina data
+    demografia_insulina = pd.merge(demografia_limpia, insulina, on='ID', how='inner')
+    #Creation of dataframe
+    insulina_muestra = pd.DataFrame()
+    insulina_muestra['ID'] = demografia_insulina['ID']
+    insulina_muestra['Edad'] = demografia_insulina['Edad']
+    insulina_muestra['Sexo'] = demografia_insulina['Sexo']
+    insulina_muestra['Nivel Pobreza'] = demografia_insulina['Nivel Pobreza']
+    insulina_muestra['Nivel Insulina'] = demografia_insulina['Insulina (μU/mL)']
+    #Imputation of missing values
+    knn_imputer = KNNImputer(n_neighbors=10, weights='uniform')
+    insulina_imputada = pd.DataFrame(knn_imputer.fit_transform(insulina_muestra), columns=insulina_muestra.columns)
+    #IQR for outliers
+    Q1 = insulina_imputada["Nivel Insulina"].quantile(0.25)
+    Q3 = insulina_imputada["Nivel Insulina"].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    insulina_clean = insulina_imputada[~((insulina_imputada["Nivel Insulina"] < lower_bound) | (insulina_imputada["Nivel Insulina"] > upper_bound))]
+    #Transformation of insulina_clean data
+    insulina_clean["Nivel Insulina"] = scaler.fit_transform(insulina_clean[["Nivel Insulina"]])
+    insulina_clean["Nivel Insulina"] = pt.fit_transform(insulina_clean[["Nivel Insulina"]])
+    return insulina_clean
+
+def demografia_perfil_bioquimico(demografia_limpia:pd.DataFrame, perfilB:pd.DataFrame)->pd.DataFrame:
+    """
+    This function does the following:
+
+    1. Merges the demographic data and the biochemistry data
+    2. Creation of a new dataframe with the following columns:
+        'ID': ID number; 
+        'Nivel Pobreza': Income in 5 groups, specified in demografia_pobreza; 
+        'Edad': Age in 5 groups, specified in demografia_edad;
+        'Sexo': Gender: 0 for women, 1 for men
+        'Alanina  ALT (U/L)': Alanine Aminotransferase
+        'Albúmina suero (g/L)': Serum Albumin
+        'Fosfata ALP (U/L)': Alanine Aminotransferase
+        'Aspartato  AST (U/L)': Aspartate Aminotransferase
+        'Bicarbonato (mmol/L)': Total Bicarbonate
+        'Nitrógeno Ureico en Sangre (mmol/L)': Urea Nitrogen
+        'Cloruro (mmol/L)': Total Chloride
+        'Cloruro (mmol/L)'] = combinacion['Cloruro (mmol/L)']
+        'Fosfoquinasa Creatina (IU/L)': Creatinine Phosphokinase 
+        'Creatinina, suero refrigerado (umol/L)': Refrigerated Serum Creatinine
+        'Globulina (g/L)': Globulin
+        'Glucosa (mmol/L)'/L)': Total Glucose
+        'Gamma Glutamil Transferasa (U/L)' : Gamma Glutamil Transferase
+        'Hierro (umol/L)'/L)': Total Iron
+        'Deshidrogenasa de Lactato (U/L)': Lactate Dehydrogenase
+        'Osmolalidad (mmol/Kg)': Osmolality
+        'Fósforo (mmol/L)': Total Phosphorus
+        'Potasio (mmol/L)': Potassium
+        'Sodio (mmol/L)': Sodium
+        'Bilirrubina Total (umol/L)': Total Bilirubin
+        'Calcio Total (mmol/L)': Total Calcium
+        'Colesterol Total (mmol/L)': Total Cholesterol
+        'Proteína Total (g/L)': Total Protein
+        'Triglicéridos (mmol/L)': Total Triglycerides
+        'Ácido Úrico (umol/L)': Uric Acid
+    3. Imputation of missing values in raw data
+    4. Deletion of outliers in raw data
+    5. Imputates data again, in case of deletion
+    6. Deletion of outliers, in clean data
+    7. Imputates data again, in case of deletion of clean data
+    8. Returns the clean dataframe from 6.
+
+    Args:
+        demografia_limpia (pd.DataFrame): Demographic data
+        perfilB (pd.DataFrame): Biochemistry data
+
+    Returns:
+        pd.DataFrame: Dataframe with outliers removed
+    """
+    #Merging of demographic and biochemistry data
+    combinacion = pd.merge(demografia_limpia, perfilB, on='ID', how='inner')
+    #Creation of dataframe
+    perfilBioquimico = pd.DataFrame()
+    perfilBioquimico['ID'] = combinacion['ID']
+    perfilBioquimico['Edad'] = combinacion['Edad']
+    perfilBioquimico['Sexo'] = combinacion['Sexo']
+    perfilBioquimico['Nivel Pobreza'] = combinacion['Nivel Pobreza']
+    perfilBioquimico['Alanina ALT (U/L)'] = combinacion['Alanina Aminotransferasa (ALT) (U/L)']
+    perfilBioquimico['Albúmina suero (g/L)'] = combinacion['Albúmina, suero refrigerado (g/L)']
+    perfilBioquimico['Fosfata ALP (U/L)'] = combinacion['Fosfatasa Alcalina (ALP) (U/L)']
+    perfilBioquimico['Aspartato AST(U/L)'] = combinacion['Aspartato Aminotransferasa (AST) (U/L)']
+    perfilBioquimico['Bicarbonato (mmol/L)'] = combinacion['Bicarbonato (mmol/L)']
+    perfilBioquimico['Nitrógeno Ureico en Sangre (mmol/L)'] = combinacion['Nitrógeno Ureico en Sangre (mmol/L)']
+    perfilBioquimico['Cloruro (mmol/L)'] = combinacion['Cloruro (mmol/L)']
+    perfilBioquimico['Fosfoquinasa Creatina (IU/L)'] = combinacion['Fosfoquinasa de Creatina (CPK) (IU/L)']
+    perfilBioquimico['Creatinina, suero refrigerado (umol/L)'] = combinacion['Creatinina, suero refrigerado (umol/L)']
+    perfilBioquimico['Globulina (g/L)'] = combinacion['Globulina (g/L)']
+    perfilBioquimico['Glucosa (mmol/L)'] = combinacion['Glucosa, suero refrigerado (mmol/L)']
+    perfilBioquimico['Gamma Glutamil Transferasa (U/L)'] = combinacion['Gamma Glutamil Transferasa (GGT) (U/L)']
+    perfilBioquimico['Hierro (umol/L)'] = combinacion['Hierro, suero refrigerado (umol/L)']
+    perfilBioquimico['Deshidrogenasa de Lactato (U/L)'] = combinacion['Deshidrogenasa de Lactato (LDH) (U/L)']
+    perfilBioquimico['Osmolalidad (mmol/Kg)'] = combinacion['Osmolalidad (mmol/Kg)']
+    perfilBioquimico['Fósforo (mmol/L)'] = combinacion['Fósforo (mmol/L)']
+    perfilBioquimico['Potasio (mmol/L)'] = combinacion['Potasio (mmol/L)']
+    perfilBioquimico['Sodio (mmol/L)'] = combinacion['Sodio (mmol/L)']
+    perfilBioquimico['Bilirrubina Total (umol/L)'] = combinacion['Bilirrubina Total (umol/L)']
+    perfilBioquimico['Calcio Total (mmol/L)'] = combinacion['Calcio Total (mmol/L)']
+    perfilBioquimico['Colesterol Total (mmol/L)'] = combinacion['Colesterol Total, suero refrigerado (mmol/L)']
+    perfilBioquimico['Proteína Total (g/L)'] = combinacion['Proteína Total (g/L)']
+    perfilBioquimico['Triglicéridos (mmol/L)'] = combinacion['Triglicéridos, suero refrigerado (mmol/L)']
+    perfilBioquimico['Ácido Úrico (umol/L)'] = combinacion['Ácido Úrico (umol/L)']
+    #Imputation
+    perfil_limpio = imputacion(perfilBioquimico)
+    #IQR
+    primer_IQR = multicolumn_IQR(perfil_limpio)
+    #Imputation
+    perfil_imputado = imputacion(primer_IQR)
+    #IQR
+    segundo_IQR = multicolumn_IQR(perfil_imputado)
+    perfil_clean = imputacion(segundo_IQR)
+    return perfil_clean
+
+def demografia_medidas_corporales(demografia_limpia:pd.DataFrame, medidas_corporales:pd.DataFrame) -> pd.DataFrame:
+    body_measures = pd.merge(demografia_limpia, medidas_corporales, on='ID', how='inner')
+    corporal = pd.DataFrame()
+    corporal['ID'] = body_measures['ID']
+    corporal['Edad'] = body_measures['Edad']
+    corporal['Sexo'] = body_measures['Sexo']
+    corporal['Nivel Pobreza'] = body_measures['Nivel Pobreza']
+    corporal['Peso (kg)'] = body_measures['Peso (kg)']
+    corporal['Altura (cm)'] = body_measures['Altura de pie (cm)']
+    corporal['IMC (kg/m²)'] = body_measures['Índice de masa corporal (kg/m²)']
+    corporal['Longitud muslo (cm)'] = body_measures['Longitud del muslo (cm)']
+    corporal['Longitud brazo superior (cm)'] = body_measures['Longitud del brazo superior (cm)']
+    corporal['Circunferencia brazo (cm)'] = body_measures['Circunferencia del brazo (cm)']
+    corporal['Circunferencia cintura (cm)'] = body_measures['Circunferencia de la cintura (cm)']
+    corporal['Circunferencia cadera (cm)'] = body_measures['Circunferencia de la cadera (cm)']
+    medidas = imputacion(corporal)
+    medidas_IQR = multicolumn_IQR(medidas)
