@@ -9,8 +9,8 @@ features = tpot_data.drop('target', axis=1)
 training_features, testing_features, training_target, testing_target = \
             train_test_split(features, tpot_data['target'], random_state=42)
 
-# Average CV score on the training set was: -409.9665997754758
-exported_pipeline = ElasticNetCV(l1_ratio=0.55, tol=0.0001)
+# Average CV score on the training set was: -409.9624805926542
+exported_pipeline = ElasticNetCV(l1_ratio=0.65, tol=0.1)
 # Fix random state in exported estimator
 if hasattr(exported_pipeline, 'random_state'):
     setattr(exported_pipeline, 'random_state', 42)

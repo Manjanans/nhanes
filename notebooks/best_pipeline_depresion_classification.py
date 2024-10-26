@@ -9,7 +9,7 @@ features = tpot_data.drop('target', axis=1)
 training_features, testing_features, training_target, testing_target = \
             train_test_split(features, tpot_data['target'], random_state=42)
 
-# Average CV score on the training set was: 0.5598692246415296
+# Average CV score on the training set was: 0.5976499159143212
 exported_pipeline = GaussianNB()
 # Fix random state in exported estimator
 if hasattr(exported_pipeline, 'random_state'):

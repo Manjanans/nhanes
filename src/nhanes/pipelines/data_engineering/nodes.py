@@ -7,6 +7,8 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import PowerTransformer
 from sklearn.impute import KNNImputer
+import ssl
+import urllib.request
 #Funciones de carga de datos
 def carga_datasets() -> pd.DataFrame:
     """
@@ -23,6 +25,7 @@ def carga_datasets() -> pd.DataFrame:
     presionArterial: Blood Pressure - Oscillometric Measurement (P_BPXO),
     medidasCorporales: Body Measures (P_BMX).
     """
+    ssl._create_default_https_context = ssl._create_unverified_context
     demografia = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_DEMO.XPT")
     colesterol = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_TCHOL.XPT")
     insulina = pd.read_sas("https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/P_INS.XPT")
