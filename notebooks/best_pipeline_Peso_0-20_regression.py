@@ -9,8 +9,8 @@ features = tpot_data.drop('target', axis=1)
 training_features, testing_features, training_target, testing_target = \
             train_test_split(features, tpot_data['target'], random_state=42)
 
-# Average CV score on the training set was: -168.8247431680491
-exported_pipeline = KNeighborsRegressor(n_neighbors=95, p=2, weights="uniform")
+# Average CV score on the training set was: -169.29240015105006
+exported_pipeline = KNeighborsRegressor(n_neighbors=92, p=2, weights="uniform")
 # Fix random state in exported estimator
 if hasattr(exported_pipeline, 'random_state'):
     setattr(exported_pipeline, 'random_state', 42)

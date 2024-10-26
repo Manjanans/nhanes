@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.linear_model import RidgeCV
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import MaxAbsScaler
 from tpot.export_utils import set_param_recursive
 
 # NOTE: Make sure that the outcome column is labeled 'target' in the data file
@@ -12,9 +12,9 @@ features = tpot_data.drop('target', axis=1)
 training_features, testing_features, training_target, testing_target = \
             train_test_split(features, tpot_data['target'], random_state=42)
 
-# Average CV score on the training set was: -229.29971248707017
+# Average CV score on the training set was: -229.55004824095258
 exported_pipeline = make_pipeline(
-    PolynomialFeatures(degree=2, include_bias=False, interaction_only=False),
+    MaxAbsScaler(),
     RidgeCV()
 )
 # Fix random state for all the steps in exported pipeline
